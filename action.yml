@@ -1,0 +1,21 @@
+name: Multi Comment
+description: Combine outputs from many jobs into a single comment
+branding:
+  icon: message-circle
+  color: blue
+inputs:
+  section:
+    description: The section ID that matches with the value in multi-comment.yml
+    required: true
+  token:
+    description: GitHub auth token
+    default: ${{ github.token }}
+  message:
+    description: Comment body
+  file-path:
+    description: File path containing the comment body
+  pr-number:
+    description: The pull request number where to create the comment
+runs:
+  using: node20
+  main: dist/index.js
