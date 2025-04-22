@@ -25,18 +25,18 @@ async function run() {
       throw new Error("No issue/pull request in input neither in current context.")
     }
 
-    console.log(typeof message, message)
     const content = message || (await fs.readFile(filePath, "utf8"))
     let comment = await findComment(issueNumber)
 
     if (comment) {
-      const unlock = await acquireLock("comment", comment.id)
-      comment = await updateComment(comment.id, section, content)
-      await unlock()
+      const commentId = comment.id
+      comment = await acquireLock("comment", commentId, () =>
+        updateComment(commentId, section, content),
+      )
     } else {
-      const unlock = await acquireLock("issue", issueNumber)
-      comment = await createComment(issueNumber, section, content)
-      await unlock()
+      comment = await acquireLock("issue", issueNumber, () =>
+        createComment(issueNumber, section, content),
+      )
     }
 
     core.setOutput("id", comment.id)
