@@ -2,11 +2,7 @@ import * as core from "@actions/core"
 import * as github from "@actions/github"
 import { retry } from "./retry"
 
-export async function acquireLock<T>(
-  type: "comment" | "issue",
-  id: number,
-  callback: () => Promise<T>,
-): Promise<T> {
+export function acquireLock(type: "comment" | "issue", id: number): Promise<AsyncDisposable> {
   const octokit = github.getOctokit(core.getInput("token"))
 
   return retry(
@@ -29,27 +25,21 @@ export async function acquireLock<T>(
         throw new Error("Lock not acquired")
       }
 
-      const unlock = async () => {
-        const args = {
-          ...github.context.repo,
-          reaction_id: reaction.id,
-        }
+      return {
+        async [Symbol.asyncDispose]() {
+          core.debug("Releasing lock...")
 
-        if (type === "issue") {
-          await octokit.rest.reactions.deleteForIssue({ ...args, issue_number: id })
-        } else {
-          await octokit.rest.reactions.deleteForIssueComment({ ...args, comment_id: id })
-        }
-      }
+          const args = {
+            ...github.context.repo,
+            reaction_id: reaction.id,
+          }
 
-      try {
-        const result = await callback()
-        await unlock()
-        return result
-      } catch (error) {
-        core.debug("Error occurred after a lock was acquired, unlocking to free other jobs...")
-        await unlock()
-        throw error
+          if (type === "issue") {
+            await octokit.rest.reactions.deleteForIssue({ ...args, issue_number: id })
+          } else {
+            await octokit.rest.reactions.deleteForIssueComment({ ...args, comment_id: id })
+          }
+        },
       }
     },
     10,

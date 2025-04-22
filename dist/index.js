@@ -54,17 +54,23 @@ const core = __importStar(__nccwpck_require__(7484));
 const github = __importStar(__nccwpck_require__(3228));
 const retry_1 = __nccwpck_require__(822);
 function acquireLock(type, id) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const octokit = github.getOctokit(core.getInput("token"));
-        return (0, retry_1.retry)((_a) => __awaiter(this, [_a], void 0, function* ({ attempt, maxAttempts }) {
-            core.debug(`Attempting to acquire lock (attempt ${attempt + 1}/${maxAttempts})...`);
-            const args = Object.assign(Object.assign({}, github.context.repo), { content: "eyes" });
-            const { data: reaction, status } = type === "issue"
-                ? yield octokit.rest.reactions.createForIssue(Object.assign(Object.assign({}, args), { issue_number: id }))
-                : yield octokit.rest.reactions.createForIssueComment(Object.assign(Object.assign({}, args), { comment_id: id }));
-            if (status === 201) {
-                core.debug("Lock acquired");
-                return () => __awaiter(this, void 0, void 0, function* () {
+    const octokit = github.getOctokit(core.getInput("token"));
+    return (0, retry_1.retry)((_a) => __awaiter(this, [_a], void 0, function* ({ attempt, maxAttempts }) {
+        core.debug(`Attempting to acquire lock (attempt ${attempt + 1}/${maxAttempts})...`);
+        const args = Object.assign(Object.assign({}, github.context.repo), { content: "eyes" });
+        const { data: reaction, status } = type === "issue"
+            ? yield octokit.rest.reactions.createForIssue(Object.assign(Object.assign({}, args), { issue_number: id }))
+            : yield octokit.rest.reactions.createForIssueComment(Object.assign(Object.assign({}, args), { comment_id: id }));
+        if (status === 201) {
+            core.debug("Lock acquired");
+        }
+        else {
+            throw new Error("Lock not acquired");
+        }
+        return {
+            [Symbol.asyncDispose]() {
+                return __awaiter(this, void 0, void 0, function* () {
+                    core.debug("Releasing lock...");
                     const args = Object.assign(Object.assign({}, github.context.repo), { reaction_id: reaction.id });
                     if (type === "issue") {
                         yield octokit.rest.reactions.deleteForIssue(Object.assign(Object.assign({}, args), { issue_number: id }));
@@ -73,12 +79,9 @@ function acquireLock(type, id) {
                         yield octokit.rest.reactions.deleteForIssueComment(Object.assign(Object.assign({}, args), { comment_id: id }));
                     }
                 });
-            }
-            else {
-                throw new Error("Lock not acquired");
-            }
-        }), 10, 1000);
-    });
+            },
+        };
+    }), 10, 1000);
 }
 
 
@@ -277,6 +280,58 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __addDisposableResource = (this && this.__addDisposableResource) || function (env, value, async) {
+    if (value !== null && value !== void 0) {
+        if (typeof value !== "object" && typeof value !== "function") throw new TypeError("Object expected.");
+        var dispose, inner;
+        if (async) {
+            if (!Symbol.asyncDispose) throw new TypeError("Symbol.asyncDispose is not defined.");
+            dispose = value[Symbol.asyncDispose];
+        }
+        if (dispose === void 0) {
+            if (!Symbol.dispose) throw new TypeError("Symbol.dispose is not defined.");
+            dispose = value[Symbol.dispose];
+            if (async) inner = dispose;
+        }
+        if (typeof dispose !== "function") throw new TypeError("Object not disposable.");
+        if (inner) dispose = function() { try { inner.call(this); } catch (e) { return Promise.reject(e); } };
+        env.stack.push({ value: value, dispose: dispose, async: async });
+    }
+    else if (async) {
+        env.stack.push({ async: true });
+    }
+    return value;
+};
+var __disposeResources = (this && this.__disposeResources) || (function (SuppressedError) {
+    return function (env) {
+        function fail(e) {
+            env.error = env.hasError ? new SuppressedError(e, env.error, "An error was suppressed during disposal.") : e;
+            env.hasError = true;
+        }
+        var r, s = 0;
+        function next() {
+            while (r = env.stack.pop()) {
+                try {
+                    if (!r.async && s === 1) return s = 0, env.stack.push(r), Promise.resolve().then(next);
+                    if (r.dispose) {
+                        var result = r.dispose.call(r.value);
+                        if (r.async) return s |= 2, Promise.resolve(result).then(next, function(e) { fail(e); return next(); });
+                    }
+                    else s |= 1;
+                }
+                catch (e) {
+                    fail(e);
+                }
+            }
+            if (s === 1) return env.hasError ? Promise.reject(env.error) : Promise.resolve();
+            if (env.hasError) throw env.error;
+        }
+        return next();
+    };
+})(typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+    var e = new Error(message);
+    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+});
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -303,18 +358,40 @@ function run() {
             if (!issueNumber) {
                 throw new Error("No issue/pull request in input neither in current context.");
             }
-            console.log(typeof message, message);
             const content = message || (yield promises_1.default.readFile(filePath, "utf8"));
             let comment = yield (0, comments_1.findComment)(issueNumber);
             if (comment) {
-                const unlock = yield (0, acquireLock_1.acquireLock)("comment", comment.id);
-                comment = yield (0, comments_1.updateComment)(comment.id, section, content);
-                yield unlock();
+                const env_1 = { stack: [], error: void 0, hasError: false };
+                try {
+                    const commentId = comment.id;
+                    const _ = __addDisposableResource(env_1, yield (0, acquireLock_1.acquireLock)("comment", commentId), true);
+                    comment = yield (0, comments_1.updateComment)(commentId, section, content);
+                }
+                catch (e_1) {
+                    env_1.error = e_1;
+                    env_1.hasError = true;
+                }
+                finally {
+                    const result_1 = __disposeResources(env_1);
+                    if (result_1)
+                        yield result_1;
+                }
             }
             else {
-                const unlock = yield (0, acquireLock_1.acquireLock)("issue", issueNumber);
-                comment = yield (0, comments_1.createComment)(issueNumber, section, content);
-                yield unlock();
+                const env_2 = { stack: [], error: void 0, hasError: false };
+                try {
+                    const _ = __addDisposableResource(env_2, yield (0, acquireLock_1.acquireLock)("issue", issueNumber), true);
+                    comment = yield (0, comments_1.createComment)(issueNumber, section, content);
+                }
+                catch (e_2) {
+                    env_2.error = e_2;
+                    env_2.hasError = true;
+                }
+                finally {
+                    const result_2 = __disposeResources(env_2);
+                    if (result_2)
+                        yield result_2;
+                }
             }
             core.setOutput("id", comment.id);
             core.setOutput("html-url", comment.html_url);

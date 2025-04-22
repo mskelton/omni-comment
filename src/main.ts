@@ -30,13 +30,11 @@ async function run() {
 
     if (comment) {
       const commentId = comment.id
-      comment = await acquireLock("comment", commentId, () =>
-        updateComment(commentId, section, content),
-      )
+      await using _ = await acquireLock("comment", commentId)
+      comment = await updateComment(commentId, section, content)
     } else {
-      comment = await acquireLock("issue", issueNumber, () =>
-        createComment(issueNumber, section, content),
-      )
+      await using _ = await acquireLock("issue", issueNumber)
+      comment = await createComment(issueNumber, section, content)
     }
 
     core.setOutput("id", comment.id)
