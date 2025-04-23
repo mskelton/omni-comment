@@ -1,16 +1,19 @@
 import * as core from "@actions/core"
 import * as github from "@actions/github"
-import { Metadata, readMetadata } from "./metadata"
+import { GitHub } from "@actions/github/lib/utils"
+import { readMetadata } from "./metadata"
 
-export async function findComment(prNumber: number) {
+export async function findComment(prNumber: number, octokit: InstanceType<typeof GitHub>) {
   core.debug("Searching for existing comment...")
 
-  const octokit = github.getOctokit(core.getInput("token"))
   const commentTagPattern = createIdentifier("id", "main")
 
   for await (const { data: comments } of octokit.paginate.iterator(
     octokit.rest.issues.listComments,
-    { ...github.context.repo, issue_number: prNumber },
+    {
+      ...github.context.repo,
+      issue_number: prNumber,
+    },
   )) {
     const comment = comments.find(({ body }) => body?.includes(commentTagPattern))
 
@@ -20,16 +23,18 @@ export async function findComment(prNumber: number) {
   }
 }
 
-export async function createComment(issueNumber: number, section: string, content: string) {
+export async function createComment(
+  issueNumber: number,
+  section: string,
+  content: string,
+  octokit: InstanceType<typeof GitHub>,
+) {
   core.debug("Creating comment...")
-
-  const octokit = github.getOctokit(core.getInput("token"))
-  const metadata = await readMetadata()
 
   const { data: comment } = await octokit.rest.issues.createComment({
     ...github.context.repo,
     body: editCommentBody({
-      body: createBlankComment(metadata),
+      body: await createBlankComment(),
       content,
       section,
     }),
@@ -39,10 +44,13 @@ export async function createComment(issueNumber: number, section: string, conten
   return comment
 }
 
-export async function updateComment(commentId: number, section: string, content: string) {
+export async function updateComment(
+  commentId: number,
+  section: string,
+  content: string,
+  octokit: InstanceType<typeof GitHub>,
+) {
   core.debug("Updating comment...")
-
-  const octokit = github.getOctokit(core.getInput("token"))
 
   const { data: comment } = await octokit.rest.issues.getComment({
     ...github.context.repo,
@@ -70,7 +78,8 @@ function createIdentifier(key: string, value: string) {
   return `<!-- mskelton/multi-comment ${key}="${value}" -->`
 }
 
-function createBlankComment(metadata: Metadata) {
+export async function createBlankComment() {
+  const metadata = await readMetadata()
   const { intro, sections, title } = metadata
 
   return [

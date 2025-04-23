@@ -18,6 +18,11 @@
   "bugs": {
     "url": "https://github.com/mskelton/multi-comment/issues"
   },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0",
+    "js-yaml": "^4.1.0"
+  },
   "devDependencies": {
     "@mskelton/eslint-config": "^9.2.0",
     "@octokit/types": "^14.0.0",
@@ -25,11 +30,8 @@
     "@types/node": "^22.14.1",
     "@vercel/ncc": "^0.38.1",
     "eslint": "^9.25.0",
-    "prettier": "^3.5.3"
-  },
-  "dependencies": {
-    "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.0",
-    "js-yaml": "^4.1.0"
+    "memfs": "^4.17.0",
+    "prettier": "^3.5.3",
+    "vitest": "^1.3.1"
   }
 }

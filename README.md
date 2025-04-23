@@ -64,6 +64,7 @@ If you are running this action from a workflow without the `pull_request` contex
 | `file-path` | File path containing the comment body                             |          |                             |
 | `pr-number` | The pull request number where to create the comment               |          | current pull request number |
 | `token`     | GitHub auth token                                                 |          | `${{ github.token }}`       |
+| `config`    | Path to the config file                                           |          | `.github/multi-comment.yml` |
 
 #### Metadata (`mutli-comment.yml`)
 

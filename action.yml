@@ -16,6 +16,9 @@ inputs:
     description: File path containing the comment body
   pr-number:
     description: The pull request number where to create the comment
+  config:
+    description: Path to the config file
+    default: .github/multi-comment.yml
 runs:
   using: node20
   main: dist/index.js

@@ -11,5 +11,5 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "exclude": ["__test__", "lib", "node_modules"]
+  "exclude": ["__test__", "lib", "node_modules", "vitest.config.ts"]
 }

@@ -1,14 +1,14 @@
 on: pull_request
 
 jobs:
-  test:
-    name: Test
+  test_action:
+    name: Test Action
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup test cases
         run: echo '**Content from a file**' > /tmp/foobar.txt

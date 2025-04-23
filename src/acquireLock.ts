@@ -1,10 +1,13 @@
 import * as core from "@actions/core"
 import * as github from "@actions/github"
+import { GitHub } from "@actions/github/lib/utils"
 import { retry } from "./retry"
 
-export function acquireLock(type: "comment" | "issue", id: number): Promise<AsyncDisposable> {
-  const octokit = github.getOctokit(core.getInput("token"))
-
+export function acquireLock(
+  type: "comment" | "issue",
+  id: number,
+  octokit: InstanceType<typeof GitHub>,
+): Promise<AsyncDisposable> {
   return retry(
     async ({ attempt, maxAttempts }) => {
       core.debug(`Attempting to acquire lock (attempt ${attempt + 1}/${maxAttempts})...`)
