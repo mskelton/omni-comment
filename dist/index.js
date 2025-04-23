@@ -61,23 +61,36 @@ function acquireLock(type, id) {
         const { data: reaction, status } = type === "issue"
             ? yield octokit.rest.reactions.createForIssue(Object.assign(Object.assign({}, args), { issue_number: id }))
             : yield octokit.rest.reactions.createForIssueComment(Object.assign(Object.assign({}, args), { comment_id: id }));
+        const unlock = () => __awaiter(this, void 0, void 0, function* () {
+            core.debug("Releasing lock...");
+            const args = Object.assign(Object.assign({}, github.context.repo), { reaction_id: reaction.id });
+            if (type === "issue") {
+                yield octokit.rest.reactions.deleteForIssue(Object.assign(Object.assign({}, args), { issue_number: id }));
+            }
+            else {
+                yield octokit.rest.reactions.deleteForIssueComment(Object.assign(Object.assign({}, args), { comment_id: id }));
+            }
+        });
         if (status === 201) {
             core.debug("Lock acquired");
         }
         else {
+            // If the lock has not been acquired after 9 attempts, it's probably due
+            // to some error in another job that prevented the lock from being
+            // released. To prevent a dead-lock that the user is unable to easily
+            // recover from, let's automatically release the lock in this case.
+            //
+            // Is this dangerous? Technical yes, but if for some reason the comment
+            // gets updated slightly incorrectly, it's better than a dead-lock.
+            if (attempt + 1 === maxAttempts) {
+                yield unlock();
+            }
             throw new Error("Lock not acquired");
         }
         return {
             [Symbol.asyncDispose]() {
                 return __awaiter(this, void 0, void 0, function* () {
-                    core.debug("Releasing lock...");
-                    const args = Object.assign(Object.assign({}, github.context.repo), { reaction_id: reaction.id });
-                    if (type === "issue") {
-                        yield octokit.rest.reactions.deleteForIssue(Object.assign(Object.assign({}, args), { issue_number: id }));
-                    }
-                    else {
-                        yield octokit.rest.reactions.deleteForIssueComment(Object.assign(Object.assign({}, args), { comment_id: id }));
-                    }
+                    yield unlock();
                 });
             },
         };
