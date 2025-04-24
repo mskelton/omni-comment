@@ -239,7 +239,7 @@ describe("multi comment", async () => {
     `)
   })
 
-  it.only("should clear the comment when content is empty", async () => {
+  it("should clear the comment when content is empty", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
       if (key === "config") return "/multi-comment.yml"
       if (key === "section") return "test-section"
