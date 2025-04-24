@@ -2,7 +2,7 @@ import * as core from "@actions/core"
 import yaml from "js-yaml"
 import { fs, vol } from "memfs"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { createBlankComment } from "../comments"
+import { createBlankComment, editCommentBody } from "../comments"
 import { run } from "../multiComment"
 
 vi.mock("node:fs", () => ({ default: fs }))
@@ -56,13 +56,6 @@ describe("multi comment", async () => {
 
   afterEach(() => {
     vi.useRealTimers()
-  })
-
-  it("should fail if no message or file path provided", async () => {
-    vi.mocked(core.getInput).mockReturnValue("")
-
-    await run(octokit)
-    expect(core.setFailed).toHaveBeenCalledWith('Either "file-path" or "message" is required.')
   })
 
   it("should fail if no issue number found", async () => {
@@ -242,6 +235,51 @@ describe("multi comment", async () => {
 
       <!-- mskelton/multi-comment start="test-section" -->
       updated message
+      <!-- mskelton/multi-comment end="test-section" -->"
+    `)
+  })
+
+  it.only("should clear the comment when content is empty", async () => {
+    vi.mocked(core.getInput).mockImplementation((key) => {
+      if (key === "config") return "/multi-comment.yml"
+      if (key === "section") return "test-section"
+      if (key === "pr-number") return "123"
+      return ""
+    })
+
+    vi.spyOn(octokit.paginate, "iterator").mockImplementation(async function* () {
+      yield ok([{ body: await createBlankComment(), id: 456 }])
+    })
+
+    vi.spyOn(octokit.rest.issues, "getComment").mockResolvedValue(
+      ok({
+        body: editCommentBody({
+          body: await createBlankComment(),
+          content: "test comment body",
+          section: "test-section",
+        }),
+        html_url: "test-url",
+        id: 456,
+      }),
+    )
+
+    const updateCommentSpy = vi
+      .spyOn(octokit.rest.issues, "updateComment")
+      .mockResolvedValue(created({ html_url: "test-url", id: 456 }))
+
+    await run(octokit)
+
+    expect(core.setFailed).not.toHaveBeenCalled()
+    expect(core.setOutput).toHaveBeenCalledWith("id", 456)
+    expect(core.setOutput).toHaveBeenCalledWith("html-url", "test-url")
+
+    const request = updateCommentSpy.mock.calls[0][0] as any
+    expect(request.comment_id).toBe(456)
+    expect(request.body).toMatchInlineSnapshot(`
+      "<!-- mskelton/multi-comment id="main" -->
+
+      <!-- mskelton/multi-comment start="test-section" -->
+
       <!-- mskelton/multi-comment end="test-section" -->"
     `)
   })

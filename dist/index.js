@@ -158,6 +158,7 @@ exports.findComment = findComment;
 exports.createComment = createComment;
 exports.updateComment = updateComment;
 exports.createBlankComment = createBlankComment;
+exports.editCommentBody = editCommentBody;
 const core = __importStar(__nccwpck_require__(7484));
 const github = __importStar(__nccwpck_require__(3228));
 const metadata_1 = __nccwpck_require__(51);
@@ -475,16 +476,13 @@ function run(octokit) {
             const section = core.getInput("section");
             const message = core.getInput("message");
             const filePath = core.getInput("file-path");
-            if (!message && !filePath) {
-                throw new Error('Either "file-path" or "message" is required.');
-            }
             const issueNumber = parseInt(core.getInput("pr-number")) ||
                 ((_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number) ||
                 ((_b = github.context.payload.issue) === null || _b === void 0 ? void 0 : _b.number);
             if (!issueNumber) {
                 throw new Error("No issue/pull request in input neither in current context.");
             }
-            const content = message || (yield promises_1.default.readFile(filePath, "utf8"));
+            const content = filePath ? yield promises_1.default.readFile(filePath, "utf8") : message;
             let comment = yield (0, comments_1.findComment)(issueNumber, octokit);
             if (comment) {
                 const env_1 = { stack: [], error: void 0, hasError: false };

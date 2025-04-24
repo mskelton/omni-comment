@@ -95,7 +95,7 @@ export async function createBlankComment() {
     .join("\n\n")
 }
 
-function editCommentBody({
+export function editCommentBody({
   body,
   content,
   section,

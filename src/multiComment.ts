@@ -11,10 +11,6 @@ export async function run(octokit: InstanceType<typeof GitHub>) {
     const message = core.getInput("message")
     const filePath = core.getInput("file-path")
 
-    if (!message && !filePath) {
-      throw new Error('Either "file-path" or "message" is required.')
-    }
-
     const issueNumber =
       parseInt(core.getInput("pr-number")) ||
       github.context.payload.pull_request?.number ||
@@ -24,7 +20,7 @@ export async function run(octokit: InstanceType<typeof GitHub>) {
       throw new Error("No issue/pull request in input neither in current context.")
     }
 
-    const content = message || (await fs.readFile(filePath, "utf8"))
+    const content = filePath ? await fs.readFile(filePath, "utf8") : message
     let comment = await findComment(issueNumber, octokit)
 
     if (comment) {
