@@ -21,6 +21,9 @@ vi.mock("@actions/github", () => ({
   },
 }))
 
+// The retry mechanism delays for a given amount of time, but we want to run tests as fast as possible
+vi.stubGlobal("setTimeout", setImmediate)
+
 const respond = (data: any, status: number) => ({ data, headers: {}, status, url: "" })
 const created = (data: any) => respond(data, 201)
 const ok = (data: any) => respond(data, 200)
