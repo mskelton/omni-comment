@@ -10,6 +10,12 @@ inputs:
   token:
     description: GitHub auth token
     default: ${{ github.token }}
+  title:
+    description:
+      A title for the section. When this is specified, the section will be rendered as a
+      expandable/collapsible section.
+  collapsed:
+    description: Collapse the section by default. Only used if title is set.
   message:
     description: Comment body
   file-path:

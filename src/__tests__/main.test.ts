@@ -85,8 +85,8 @@ describe("multi comment", async () => {
   it("should create new comment when none exists", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
       if (key === "config") return "/multi-comment.yml"
-      if (key === "message") return "test message"
       if (key === "section") return "test-section"
+      if (key === "message") return "test message"
       if (key === "pr-number") return "123"
       return ""
     })
@@ -119,8 +119,8 @@ describe("multi comment", async () => {
   it("should lock the PR for the first comment", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
       if (key === "config") return "/multi-comment.yml"
-      if (key === "message") return "test message"
       if (key === "section") return "test-section"
+      if (key === "message") return "test message"
       if (key === "pr-number") return "123"
       return ""
     })
@@ -157,8 +157,8 @@ describe("multi comment", async () => {
   it("should update existing comment", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
       if (key === "config") return "/multi-comment.yml"
-      if (key === "message") return "updated message"
       if (key === "section") return "test-section"
+      if (key === "message") return "updated message"
       if (key === "pr-number") return "123"
       return ""
     })
@@ -199,8 +199,8 @@ describe("multi comment", async () => {
   it("should lock the comment when updating", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
       if (key === "config") return "/multi-comment.yml"
-      if (key === "message") return "updated message"
       if (key === "section") return "test-section"
+      if (key === "message") return "updated message"
       if (key === "pr-number") return "123"
       return ""
     })
@@ -260,6 +260,7 @@ describe("multi comment", async () => {
           body: await createBlankComment(),
           content: "test comment body",
           section: "test-section",
+          title: "test title",
         }),
         html_url: "test-url",
         id: 456,
@@ -283,6 +284,97 @@ describe("multi comment", async () => {
 
       <!-- mskelton/multi-comment start="test-section" -->
 
+      <!-- mskelton/multi-comment end="test-section" -->"
+    `)
+  })
+
+  it("should render as summary/details when title is specified", async () => {
+    vi.mocked(core.getInput).mockImplementation((key) => {
+      if (key === "config") return "/multi-comment.yml"
+      if (key === "title") return "test title"
+      if (key === "section") return "test-section"
+      if (key === "message") return "test message"
+      if (key === "pr-number") return "123"
+      return ""
+    })
+
+    vi.mocked(core.getBooleanInput).mockImplementation((key) => {
+      if (key === "collapsed") return false
+      return false
+    })
+
+    vi.spyOn(octokit.paginate, "iterator").mockImplementation(async function* () {
+      yield created([])
+    })
+
+    const createCommentSpy = vi
+      .spyOn(octokit.rest.issues, "createComment")
+      .mockResolvedValue(created({ html_url: "test-url", id: 456 }))
+
+    await run(octokit)
+
+    expect(core.setFailed).not.toHaveBeenCalled()
+    expect(core.setOutput).toHaveBeenCalledWith("id", 456)
+    expect(core.setOutput).toHaveBeenCalledWith("html-url", "test-url")
+
+    const request = createCommentSpy.mock.calls[0][0] as any
+    expect(request.issue_number).toBe(123)
+    expect(request.body).toMatchInlineSnapshot(`
+      "<!-- mskelton/multi-comment id="main" -->
+
+      <!-- mskelton/multi-comment start="test-section" -->
+      <details open>
+      <summary><h2>test title</h2></summary>
+
+      test message
+
+      </details>
+      <!-- mskelton/multi-comment end="test-section" -->"
+    `)
+  })
+
+  it("can render a summary/details comment closed", async () => {
+    vi.mocked(core.getInput).mockImplementation((key) => {
+      if (key === "config") return "/multi-comment.yml"
+      if (key === "title") return "test title"
+      if (key === "collapsed") return "true"
+      if (key === "section") return "test-section"
+      if (key === "message") return "test message"
+      if (key === "pr-number") return "123"
+      return ""
+    })
+
+    vi.mocked(core.getBooleanInput).mockImplementation((key) => {
+      if (key === "collapsed") return true
+      return false
+    })
+
+    vi.spyOn(octokit.paginate, "iterator").mockImplementation(async function* () {
+      yield created([])
+    })
+
+    const createCommentSpy = vi
+      .spyOn(octokit.rest.issues, "createComment")
+      .mockResolvedValue(created({ html_url: "test-url", id: 456 }))
+
+    await run(octokit)
+
+    expect(core.setFailed).not.toHaveBeenCalled()
+    expect(core.setOutput).toHaveBeenCalledWith("id", 456)
+    expect(core.setOutput).toHaveBeenCalledWith("html-url", "test-url")
+
+    const request = createCommentSpy.mock.calls[0][0] as any
+    expect(request.issue_number).toBe(123)
+    expect(request.body).toMatchInlineSnapshot(`
+      "<!-- mskelton/multi-comment id="main" -->
+
+      <!-- mskelton/multi-comment start="test-section" -->
+      <details>
+      <summary><h2>test title</h2></summary>
+
+      test message
+
+      </details>
       <!-- mskelton/multi-comment end="test-section" -->"
     `)
   })

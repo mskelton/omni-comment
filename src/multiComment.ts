@@ -7,6 +7,8 @@ import { createComment, findComment, updateComment } from "./comments"
 
 export async function run(octokit: InstanceType<typeof GitHub>) {
   try {
+    const title = core.getInput("title")
+    const collapsed = core.getBooleanInput("collapsed")
     const section = core.getInput("section")
     const message = core.getInput("message")
     const filePath = core.getInput("file-path")
@@ -26,10 +28,10 @@ export async function run(octokit: InstanceType<typeof GitHub>) {
     if (comment) {
       const commentId = comment.id
       await using _ = await acquireLock("comment", commentId, octokit)
-      comment = await updateComment(commentId, section, content, octokit)
+      comment = await updateComment(commentId, title, section, content, collapsed, octokit)
     } else {
       await using _ = await acquireLock("issue", issueNumber, octokit)
-      comment = await createComment(issueNumber, section, content, octokit)
+      comment = await createComment(issueNumber, title, section, content, collapsed, octokit)
     }
 
     core.setOutput("id", comment.id)
