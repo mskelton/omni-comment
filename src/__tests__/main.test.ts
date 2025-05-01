@@ -288,6 +288,29 @@ describe("multi comment", async () => {
     `)
   })
 
+  it("should noop if the comment doesn't exist and the content is empty", async () => {
+    vi.mocked(core.getInput).mockImplementation((key) => {
+      if (key === "config") return "/multi-comment.yml"
+      if (key === "section") return "test-section"
+      if (key === "pr-number") return "123"
+      return ""
+    })
+
+    vi.spyOn(octokit.paginate, "iterator").mockImplementation(async function* () {
+      yield created([])
+    })
+
+    const createCommentSpy = vi
+      .spyOn(octokit.rest.issues, "createComment")
+      .mockResolvedValue(created({ html_url: "test-url", id: 456 }))
+
+    await run(octokit)
+
+    expect(core.setFailed).not.toHaveBeenCalled()
+    expect(core.setOutput).not.toHaveBeenCalled()
+    expect(createCommentSpy).not.toHaveBeenCalled()
+  })
+
   it("should render as summary/details when title is specified", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
       if (key === "config") return "/multi-comment.yml"

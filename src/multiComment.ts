@@ -29,13 +29,15 @@ export async function run(octokit: InstanceType<typeof GitHub>) {
       const commentId = comment.id
       await using _ = await acquireLock("comment", commentId, octokit)
       comment = await updateComment(commentId, title, section, content, collapsed, octokit)
-    } else {
+    } else if (content) {
       await using _ = await acquireLock("issue", issueNumber, octokit)
       comment = await createComment(issueNumber, title, section, content, collapsed, octokit)
     }
 
-    core.setOutput("id", comment.id)
-    core.setOutput("html-url", comment.html_url)
+    if (comment) {
+      core.setOutput("id", comment.id)
+      core.setOutput("html-url", comment.html_url)
+    }
   } catch (error) {
     if (error instanceof Error) {
       core.setFailed(error.message)
