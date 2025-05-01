@@ -187,18 +187,20 @@ function findComment(prNumber, octokit) {
         }
     });
 }
-function createComment(issueNumber, section, content, octokit) {
+function createComment(issueNumber, title, section, content, collapsed, octokit) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug("Creating comment...");
         const { data: comment } = yield octokit.rest.issues.createComment(Object.assign(Object.assign({}, github.context.repo), { body: editCommentBody({
                 body: yield createBlankComment(),
+                collapsed,
                 content,
                 section,
+                title,
             }), issue_number: issueNumber }));
         return comment;
     });
 }
-function updateComment(commentId, section, content, octokit) {
+function updateComment(commentId, title, section, content, collapsed, octokit) {
     return __awaiter(this, void 0, void 0, function* () {
         core.debug("Updating comment...");
         const { data: comment } = yield octokit.rest.issues.getComment(Object.assign(Object.assign({}, github.context.repo), { comment_id: commentId }));
@@ -207,8 +209,10 @@ function updateComment(commentId, section, content, octokit) {
         }
         yield octokit.rest.issues.updateComment(Object.assign(Object.assign({}, github.context.repo), { body: editCommentBody({
                 body: comment.body,
+                collapsed,
                 content,
                 section,
+                title,
             }), comment_id: commentId }));
         return comment;
     });
@@ -233,12 +237,22 @@ function createBlankComment() {
             .join("\n\n");
     });
 }
-function editCommentBody({ body, content, section, }) {
+function editCommentBody({ body, collapsed, content, section, title, }) {
     const lines = body.split("\n");
     const startIndex = lines.findIndex((line) => line.includes(createIdentifier("start", section)));
     const endIndex = lines.findIndex((line) => line.includes(createIdentifier("end", section)));
     if (startIndex === -1 || endIndex === -1) {
         throw new Error("Section not found");
+    }
+    if (title) {
+        content = [
+            `<details${collapsed ? "" : " open"}>`,
+            `<summary><h2>${title}</h2></summary>`,
+            "",
+            content,
+            "",
+            "</details>",
+        ].join("\n");
     }
     return [...lines.slice(0, startIndex + 1), content, ...lines.slice(endIndex)].join("\n");
 }
@@ -473,6 +487,8 @@ function run(octokit) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b;
         try {
+            const title = core.getInput("title");
+            const collapsed = core.getBooleanInput("collapsed");
             const section = core.getInput("section");
             const message = core.getInput("message");
             const filePath = core.getInput("file-path");
@@ -489,7 +505,7 @@ function run(octokit) {
                 try {
                     const commentId = comment.id;
                     const _ = __addDisposableResource(env_1, yield (0, acquireLock_1.acquireLock)("comment", commentId, octokit), true);
-                    comment = yield (0, comments_1.updateComment)(commentId, section, content, octokit);
+                    comment = yield (0, comments_1.updateComment)(commentId, title, section, content, collapsed, octokit);
                 }
                 catch (e_1) {
                     env_1.error = e_1;
@@ -501,11 +517,11 @@ function run(octokit) {
                         yield result_1;
                 }
             }
-            else {
+            else if (content) {
                 const env_2 = { stack: [], error: void 0, hasError: false };
                 try {
                     const _ = __addDisposableResource(env_2, yield (0, acquireLock_1.acquireLock)("issue", issueNumber, octokit), true);
-                    comment = yield (0, comments_1.createComment)(issueNumber, section, content, octokit);
+                    comment = yield (0, comments_1.createComment)(issueNumber, title, section, content, collapsed, octokit);
                 }
                 catch (e_2) {
                     env_2.error = e_2;
@@ -517,8 +533,10 @@ function run(octokit) {
                         yield result_2;
                 }
             }
-            core.setOutput("id", comment.id);
-            core.setOutput("html-url", comment.html_url);
+            if (comment) {
+                core.setOutput("id", comment.id);
+                core.setOutput("html-url", comment.html_url);
+            }
         }
         catch (error) {
             if (error instanceof Error) {

@@ -11,5 +11,5 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "exclude": ["lib", "node_modules", "vitest.config.ts"]
+  "exclude": ["lib", "node_modules", "vite.config.mts"]
 }
