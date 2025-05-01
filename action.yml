@@ -16,6 +16,7 @@ inputs:
       expandable/collapsible section.
   collapsed:
     description: Collapse the section by default. Only used if title is set.
+    default: "false"
   message:
     description: Comment body
   file-path:
