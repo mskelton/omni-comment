@@ -218,7 +218,7 @@ function updateComment(commentId, title, section, content, collapsed, octokit) {
     });
 }
 function createIdentifier(key, value) {
-    return `<!-- mskelton/multi-comment ${key}="${value}" -->`;
+    return `<!-- mskelton/omni-comment ${key}="${value}" -->`;
 }
 function createBlankComment() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -301,10 +301,10 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(7484));
 const github = __importStar(__nccwpck_require__(3228));
-const multiComment_1 = __nccwpck_require__(6240);
+const omniComment_1 = __nccwpck_require__(750);
 const token = core.getInput("token");
 const client = github.getOctokit(token);
-(0, multiComment_1.run)(client);
+(0, omniComment_1.run)(client);
 
 
 /***/ }),
@@ -374,7 +374,7 @@ function readMetadata() {
 
 /***/ }),
 
-/***/ 6240:
+/***/ 750:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
