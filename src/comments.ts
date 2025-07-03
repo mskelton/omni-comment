@@ -83,7 +83,7 @@ export async function updateComment(
 }
 
 function createIdentifier(key: string, value: string) {
-  return `<!-- mskelton/multi-comment ${key}="${value}" -->`
+  return `<!-- mskelton/omni-comment ${key}="${value}" -->`
 }
 
 export async function createBlankComment() {

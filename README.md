@@ -1,10 +1,10 @@
-# GitHub Multi Comment Action
+# GitHub Omni Comment Action
 
 Combine outputs from many jobs into a single comment
 
 ## Usage
 
-Create a file named `.github/multi-comment.yml` to define the section IDs that _can_ appear in the
+Create a file named `.github/omni-comment.yml` to define the section IDs that _can_ appear in the
 comment.
 
 ```yaml
@@ -19,7 +19,7 @@ which will be posted.
 
 ```yaml
 - name: Comment with test results
-  uses: mskelton/multi-comment@v1
+  uses: mskelton/omni-comment@v1
   with:
     section: test_results
     message: Hello world
@@ -33,7 +33,7 @@ _If both a `message` and `file-path` are provided, `message` will take precedenc
 
 ```yaml
 - name: Comment with test results
-  uses: mskelton/multi-comment@v1
+  uses: mskelton/omni-comment@v1
   with:
     section: test_results
     file-path: /path/to/file.txt
@@ -46,7 +46,7 @@ If you are running this action from a workflow without the `pull_request` contex
 
 ```yaml
 - name: Comment with test results
-  uses: mskelton/multi-comment@v1
+  uses: mskelton/omni-comment@v1
   with:
     section: test_results
     message: Hello world
@@ -57,14 +57,14 @@ If you are running this action from a workflow without the `pull_request` contex
 
 #### Action Inputs
 
-| Name        | Description                                                       | Required | Default                     |
-| ----------- | ----------------------------------------------------------------- | -------- | --------------------------- |
-| `section`   | The section ID that matches with the value in `multi-comment.yml` | ✅       |                             |
-| `message`   | Comment body                                                      |          |                             |
-| `file-path` | File path containing the comment body                             |          |                             |
-| `pr-number` | The pull request number where to create the comment               |          | current pull request number |
-| `token`     | GitHub auth token                                                 |          | `${{ github.token }}`       |
-| `config`    | Path to the config file                                           |          | `.github/multi-comment.yml` |
+| Name        | Description                                                      | Required | Default                     |
+| ----------- | ---------------------------------------------------------------- | -------- | --------------------------- |
+| `section`   | The section ID that matches with the value in `omni-comment.yml` | ✅       |                             |
+| `message`   | Comment body                                                     |          |                             |
+| `file-path` | File path containing the comment body                            |          |                             |
+| `pr-number` | The pull request number where to create the comment              |          | current pull request number |
+| `token`     | GitHub auth token                                                |          | `${{ github.token }}`       |
+| `config`    | Path to the config file                                          |          | `.github/omni-comment.yml`  |
 
 #### Metadata (`mutli-comment.yml`)
 

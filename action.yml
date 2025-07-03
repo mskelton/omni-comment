@@ -1,11 +1,11 @@
-name: Multi Comment
+name: Omni Comment
 description: Combine outputs from many jobs into a single comment
 branding:
   icon: message-circle
   color: blue
 inputs:
   section:
-    description: The section ID that matches with the value in multi-comment.yml
+    description: The section ID that matches with the value in omni-comment.yml
     required: true
   token:
     description: GitHub auth token
@@ -25,7 +25,7 @@ inputs:
     description: The pull request number where to create the comment
   config:
     description: Path to the config file
-    default: .github/multi-comment.yml
+    default: .github/omni-comment.yml
 runs:
   using: node20
   main: dist/index.js

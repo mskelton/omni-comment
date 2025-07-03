@@ -3,7 +3,7 @@ import yaml from "js-yaml"
 import { fs, vol } from "memfs"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { createBlankComment, editCommentBody } from "../comments"
-import { run } from "../multiComment"
+import { run } from "../omniComment"
 
 vi.mock("node:fs", () => ({ default: fs }))
 vi.mock("node:fs/promises", () => ({ default: fs.promises }))
@@ -28,7 +28,7 @@ const respond = (data: any, status: number) => ({ data, headers: {}, status, url
 const created = (data: any) => respond(data, 201)
 const ok = (data: any) => respond(data, 200)
 
-describe("multi comment", async () => {
+describe("omni comment", async () => {
   const github = await vi.importActual<typeof github>("@actions/github")
   const octokit = github.getOctokit("faketoken")
 
@@ -37,7 +37,7 @@ describe("multi comment", async () => {
     vol.reset()
 
     // Throw a sample config file since most tests don't need to do this separately
-    fs.writeFileSync("/multi-comment.yml", yaml.dump({ sections: ["test-section"] }))
+    fs.writeFileSync("/omni-comment.yml", yaml.dump({ sections: ["test-section"] }))
 
     // Mock the endpoint so that the `paginate` method can be called
     vi.spyOn(octokit.rest.issues.listComments, "endpoint").mockReturnValue({
@@ -84,7 +84,7 @@ describe("multi comment", async () => {
 
   it("should create new comment when none exists", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
-      if (key === "config") return "/multi-comment.yml"
+      if (key === "config") return "/omni-comment.yml"
       if (key === "section") return "test-section"
       if (key === "message") return "test message"
       if (key === "pr-number") return "123"
@@ -108,17 +108,17 @@ describe("multi comment", async () => {
     const request = createCommentSpy.mock.calls[0][0] as any
     expect(request.issue_number).toBe(123)
     expect(request.body).toMatchInlineSnapshot(`
-      "<!-- mskelton/multi-comment id="main" -->
+      "<!-- mskelton/omni-comment id="main" -->
 
-      <!-- mskelton/multi-comment start="test-section" -->
+      <!-- mskelton/omni-comment start="test-section" -->
       test message
-      <!-- mskelton/multi-comment end="test-section" -->"
+      <!-- mskelton/omni-comment end="test-section" -->"
     `)
   })
 
   it("should lock the PR for the first comment", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
-      if (key === "config") return "/multi-comment.yml"
+      if (key === "config") return "/omni-comment.yml"
       if (key === "section") return "test-section"
       if (key === "message") return "test message"
       if (key === "pr-number") return "123"
@@ -146,17 +146,17 @@ describe("multi comment", async () => {
     const request = createCommentSpy.mock.calls[0][0] as any
     expect(request.issue_number).toBe(123)
     expect(request.body).toMatchInlineSnapshot(`
-      "<!-- mskelton/multi-comment id="main" -->
+      "<!-- mskelton/omni-comment id="main" -->
 
-      <!-- mskelton/multi-comment start="test-section" -->
+      <!-- mskelton/omni-comment start="test-section" -->
       test message
-      <!-- mskelton/multi-comment end="test-section" -->"
+      <!-- mskelton/omni-comment end="test-section" -->"
     `)
   })
 
   it("should update existing comment", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
-      if (key === "config") return "/multi-comment.yml"
+      if (key === "config") return "/omni-comment.yml"
       if (key === "section") return "test-section"
       if (key === "message") return "updated message"
       if (key === "pr-number") return "123"
@@ -188,17 +188,17 @@ describe("multi comment", async () => {
     const request = updateCommentSpy.mock.calls[0][0] as any
     expect(request.comment_id).toBe(456)
     expect(request.body).toMatchInlineSnapshot(`
-      "<!-- mskelton/multi-comment id="main" -->
+      "<!-- mskelton/omni-comment id="main" -->
 
-      <!-- mskelton/multi-comment start="test-section" -->
+      <!-- mskelton/omni-comment start="test-section" -->
       updated message
-      <!-- mskelton/multi-comment end="test-section" -->"
+      <!-- mskelton/omni-comment end="test-section" -->"
     `)
   })
 
   it("should lock the comment when updating", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
-      if (key === "config") return "/multi-comment.yml"
+      if (key === "config") return "/omni-comment.yml"
       if (key === "section") return "test-section"
       if (key === "message") return "updated message"
       if (key === "pr-number") return "123"
@@ -234,17 +234,17 @@ describe("multi comment", async () => {
     const request = updateCommentSpy.mock.calls[0][0] as any
     expect(request.comment_id).toBe(456)
     expect(request.body).toMatchInlineSnapshot(`
-      "<!-- mskelton/multi-comment id="main" -->
+      "<!-- mskelton/omni-comment id="main" -->
 
-      <!-- mskelton/multi-comment start="test-section" -->
+      <!-- mskelton/omni-comment start="test-section" -->
       updated message
-      <!-- mskelton/multi-comment end="test-section" -->"
+      <!-- mskelton/omni-comment end="test-section" -->"
     `)
   })
 
   it("should clear the comment when content is empty", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
-      if (key === "config") return "/multi-comment.yml"
+      if (key === "config") return "/omni-comment.yml"
       if (key === "section") return "test-section"
       if (key === "pr-number") return "123"
       return ""
@@ -280,17 +280,17 @@ describe("multi comment", async () => {
     const request = updateCommentSpy.mock.calls[0][0] as any
     expect(request.comment_id).toBe(456)
     expect(request.body).toMatchInlineSnapshot(`
-      "<!-- mskelton/multi-comment id="main" -->
+      "<!-- mskelton/omni-comment id="main" -->
 
-      <!-- mskelton/multi-comment start="test-section" -->
+      <!-- mskelton/omni-comment start="test-section" -->
 
-      <!-- mskelton/multi-comment end="test-section" -->"
+      <!-- mskelton/omni-comment end="test-section" -->"
     `)
   })
 
   it("should noop if the comment doesn't exist and the content is empty", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
-      if (key === "config") return "/multi-comment.yml"
+      if (key === "config") return "/omni-comment.yml"
       if (key === "section") return "test-section"
       if (key === "pr-number") return "123"
       return ""
@@ -313,7 +313,7 @@ describe("multi comment", async () => {
 
   it("should render as summary/details when title is specified", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
-      if (key === "config") return "/multi-comment.yml"
+      if (key === "config") return "/omni-comment.yml"
       if (key === "title") return "test title"
       if (key === "section") return "test-section"
       if (key === "message") return "test message"
@@ -343,22 +343,22 @@ describe("multi comment", async () => {
     const request = createCommentSpy.mock.calls[0][0] as any
     expect(request.issue_number).toBe(123)
     expect(request.body).toMatchInlineSnapshot(`
-      "<!-- mskelton/multi-comment id="main" -->
+      "<!-- mskelton/omni-comment id="main" -->
 
-      <!-- mskelton/multi-comment start="test-section" -->
+      <!-- mskelton/omni-comment start="test-section" -->
       <details open>
       <summary><h2>test title</h2></summary>
 
       test message
 
       </details>
-      <!-- mskelton/multi-comment end="test-section" -->"
+      <!-- mskelton/omni-comment end="test-section" -->"
     `)
   })
 
   it("can render a summary/details comment closed", async () => {
     vi.mocked(core.getInput).mockImplementation((key) => {
-      if (key === "config") return "/multi-comment.yml"
+      if (key === "config") return "/omni-comment.yml"
       if (key === "title") return "test title"
       if (key === "collapsed") return "true"
       if (key === "section") return "test-section"
@@ -389,16 +389,16 @@ describe("multi comment", async () => {
     const request = createCommentSpy.mock.calls[0][0] as any
     expect(request.issue_number).toBe(123)
     expect(request.body).toMatchInlineSnapshot(`
-      "<!-- mskelton/multi-comment id="main" -->
+      "<!-- mskelton/omni-comment id="main" -->
 
-      <!-- mskelton/multi-comment start="test-section" -->
+      <!-- mskelton/omni-comment start="test-section" -->
       <details>
       <summary><h2>test title</h2></summary>
 
       test message
 
       </details>
-      <!-- mskelton/multi-comment end="test-section" -->"
+      <!-- mskelton/omni-comment end="test-section" -->"
     `)
   })
 })

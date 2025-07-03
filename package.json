@@ -1,5 +1,5 @@
 {
-  "name": "multi-comment",
+  "name": "omni-comment",
   "version": "1.0.0",
   "description": "Combine outputs from many jobs into a single comment",
   "main": "lib/main.js",
@@ -14,9 +14,9 @@
   ],
   "author": "Mark Skelton",
   "license": "ISC",
-  "homepage": "https://github.com/mskelton/multi-comment#readme",
+  "homepage": "https://github.com/mskelton/omni-comment#readme",
   "bugs": {
-    "url": "https://github.com/mskelton/multi-comment/issues"
+    "url": "https://github.com/mskelton/omni-comment/issues"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
