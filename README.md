@@ -62,6 +62,8 @@ If you are running this action from a workflow without the `pull_request` contex
 | `section`   | The section ID that matches with the value in `omni-comment.yml` | ✅       |                             |
 | `message`   | Comment body                                                     |          |                             |
 | `file-path` | File path containing the comment body                            |          |                             |
+| `title`     | An optional title for the comment section                        |          |                             |
+| `collapsed` | Whether to collapse the comment section by default               |          | `false`                     |
 | `pr-number` | The pull request number where to create the comment              |          | current pull request number |
 | `token`     | GitHub auth token                                                |          | `${{ github.token }}`       |
 | `config`    | Path to the config file                                          |          | `.github/omni-comment.yml`  |
@@ -121,10 +123,3 @@ to acquire a lock). Once the lock is acquired, the existing comment will be down
 pushed back to GitHub. After updating the comment, the lock is released by deleting the reaction.
 
 Simple right? 😉
-
-## Thanks
-
-Thanks to
-[thollander/actions-comment-pull-request](https://github.com/thollander/actions-comment-pull-request)
-for the original action this was based on. I have made many changes, but the foundation provided in
-that action was very helpful!
