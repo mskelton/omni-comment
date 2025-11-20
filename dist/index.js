@@ -7311,9 +7311,6 @@ function editCommentBody({ body, collapsed, content, section, title, }) {
     const lines = body.split("\n");
     const startIndex = lines.findIndex((line) => line.includes(createIdentifier("start", section)));
     const endIndex = lines.findIndex((line) => line.includes(createIdentifier("end", section)));
-    if (startIndex === -1 || endIndex === -1) {
-        throw new Error("Section not found");
-    }
     if (title) {
         content = [
             `<details${collapsed ? "" : " open"}>`,
@@ -7323,6 +7320,11 @@ function editCommentBody({ body, collapsed, content, section, title, }) {
             "",
             "</details>",
         ].join("\n");
+    }
+    // If the section is not found, append the content to the end of the comment
+    // This is necessary as you add new comment sections
+    if (startIndex === -1 || endIndex === -1) {
+        return [...lines, content].join("\n");
     }
     return [...lines.slice(0, startIndex + 1), content, ...lines.slice(endIndex)].join("\n");
 }
