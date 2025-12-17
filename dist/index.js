@@ -7159,28 +7159,21 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.acquireLock = acquireLock;
 const retry_1 = __nccwpck_require__(4047);
-function acquireLock(type, id, { logger, octokit, repo }) {
+function acquireLock(id, { logger, octokit, repo }) {
     return (0, retry_1.retry)((_a) => __awaiter(this, [_a], void 0, function* ({ attempt, maxAttempts }) {
         logger === null || logger === void 0 ? void 0 : logger.debug(`Attempting to acquire lock (attempt ${attempt + 1}/${maxAttempts})...`);
         const args = Object.assign(Object.assign({}, repo), { content: "eyes" });
-        const { data: reaction, status } = type === "issue"
-            ? yield octokit.reactions.createForIssue(Object.assign(Object.assign({}, args), { issue_number: id }))
-            : yield octokit.reactions.createForIssueComment(Object.assign(Object.assign({}, args), { comment_id: id }));
+        const { data: reaction, status } = yield octokit.reactions.createForIssue(Object.assign(Object.assign({}, args), { issue_number: id }));
         const unlock = () => __awaiter(this, void 0, void 0, function* () {
             logger === null || logger === void 0 ? void 0 : logger.debug("Releasing lock...");
             const args = Object.assign(Object.assign({}, repo), { reaction_id: reaction.id });
-            if (type === "issue") {
-                yield octokit.reactions.deleteForIssue(Object.assign(Object.assign({}, args), { issue_number: id }));
-            }
-            else {
-                yield octokit.reactions.deleteForIssueComment(Object.assign(Object.assign({}, args), { comment_id: id }));
-            }
+            yield octokit.reactions.deleteForIssue(Object.assign(Object.assign({}, args), { issue_number: id }));
         });
         if (status === 201) {
             logger === null || logger === void 0 ? void 0 : logger.debug("Lock acquired");
         }
         else {
-            // If the lock has not been acquired after 9 attempts, it's probably due
+            // If the lock has not been acquired after 7 attempts, it's probably due
             // to some error in another job that prevented the lock from being
             // released. To prevent a dead-lock that the user is unable to easily
             // recover from, let's automatically release the lock in this case.
@@ -7199,7 +7192,7 @@ function acquireLock(type, id, { logger, octokit, repo }) {
                 });
             },
         };
-    }), 10, 1000);
+    }), 7, 1000);
 }
 
 
@@ -7409,68 +7402,47 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.omniComment = omniComment;
-const node_assert_1 = __importDefault(__nccwpck_require__(4589));
 const rest_1 = __nccwpck_require__(6145);
+const node_assert_1 = __importDefault(__nccwpck_require__(4589));
 const acquireLock_1 = __nccwpck_require__(5454);
 const comments_1 = __nccwpck_require__(755);
 const utils_1 = __nccwpck_require__(2695);
 function omniComment(options) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b, _c;
-        (0, node_assert_1.default)(!!options.issueNumber, "Issue number is required");
-        (0, node_assert_1.default)(!!options.repo, "Repo is required");
-        (0, node_assert_1.default)(!!options.section, "Section is required");
-        (0, node_assert_1.default)(!!options.token, "Token is required");
-        const ctx = {
-            logger: options.logger,
-            octokit: new rest_1.Octokit({ auth: options.token }),
-            repo: (0, utils_1.parseRepo)(options.repo),
-        };
-        let comment = yield (0, comments_1.findComment)(options.issueNumber, ctx);
-        if (comment) {
-            const env_1 = { stack: [], error: void 0, hasError: false };
-            try {
-                const commentId = comment.id;
-                const _ = __addDisposableResource(env_1, yield (0, acquireLock_1.acquireLock)("comment", commentId, ctx), true);
-                const updatedComment = yield (0, comments_1.updateComment)(commentId, options.title || "", options.section, options.message || "", (_a = options.collapsed) !== null && _a !== void 0 ? _a : false, ctx);
-                return {
-                    html_url: updatedComment.html_url,
-                    id: updatedComment.id,
-                    status: "updated",
-                };
+        const env_1 = { stack: [], error: void 0, hasError: false };
+        try {
+            (0, node_assert_1.default)(!!options.issueNumber, "Issue number is required");
+            (0, node_assert_1.default)(!!options.repo, "Repo is required");
+            (0, node_assert_1.default)(!!options.section, "Section is required");
+            (0, node_assert_1.default)(!!options.token, "Token is required");
+            const ctx = {
+                logger: options.logger,
+                octokit: new rest_1.Octokit({ auth: options.token }),
+                repo: (0, utils_1.parseRepo)(options.repo),
+            };
+            // Acquire a lock on the issue to prevent race conditions
+            const _ = __addDisposableResource(env_1, yield (0, acquireLock_1.acquireLock)(options.issueNumber, ctx), true);
+            const comment = yield (0, comments_1.findComment)(options.issueNumber, ctx);
+            if (comment) {
+                const { html_url, id } = yield (0, comments_1.updateComment)(comment.id, options.title || "", options.section, options.message || "", (_a = options.collapsed) !== null && _a !== void 0 ? _a : false, ctx);
+                return { html_url, id, status: "updated" };
             }
-            catch (e_1) {
-                env_1.error = e_1;
-                env_1.hasError = true;
+            else if (options.message) {
+                const { html_url, id } = yield (0, comments_1.createComment)(options.issueNumber, options.title || "", options.section, options.message, (_b = options.collapsed) !== null && _b !== void 0 ? _b : false, (_c = options.configPath) !== null && _c !== void 0 ? _c : "omni-comment.yml", ctx);
+                return { html_url, id, status: "created" };
             }
-            finally {
-                const result_1 = __disposeResources(env_1);
-                if (result_1)
-                    yield result_1;
-            }
+            return null;
         }
-        else if (options.message) {
-            const env_2 = { stack: [], error: void 0, hasError: false };
-            try {
-                const _ = __addDisposableResource(env_2, yield (0, acquireLock_1.acquireLock)("issue", options.issueNumber, ctx), true);
-                comment = yield (0, comments_1.createComment)(options.issueNumber, options.title || "", options.section, options.message, (_b = options.collapsed) !== null && _b !== void 0 ? _b : false, (_c = options.configPath) !== null && _c !== void 0 ? _c : "omni-comment.yml", ctx);
-                return {
-                    html_url: comment.html_url,
-                    id: comment.id,
-                    status: "created",
-                };
-            }
-            catch (e_2) {
-                env_2.error = e_2;
-                env_2.hasError = true;
-            }
-            finally {
-                const result_2 = __disposeResources(env_2);
-                if (result_2)
-                    yield result_2;
-            }
+        catch (e_1) {
+            env_1.error = e_1;
+            env_1.hasError = true;
         }
-        return null;
+        finally {
+            const result_1 = __disposeResources(env_1);
+            if (result_1)
+                yield result_1;
+        }
     });
 }
 
