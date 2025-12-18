@@ -68,7 +68,7 @@ If you are running this action from a workflow without the `pull_request` contex
 | `token`     | GitHub auth token                                                |          | `${{ github.token }}`       |
 | `config`    | Path to the config file                                          |          | `.github/omni-comment.yml`  |
 
-#### Metadata (`mutli-comment.yml`)
+#### Metadata (`omni-comment.yml`)
 
 | Name       | Description                                                                | Required |
 | ---------- | -------------------------------------------------------------------------- | -------- |
