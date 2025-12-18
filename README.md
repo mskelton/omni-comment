@@ -110,11 +110,11 @@ the test results are now passing instead of failed.
 The GitHub issue comments API only supports sending a complete comment body when making updates, so
 if we just get the current value and send it back with our updates, its possible that two separate
 jobs update the comment at the same time and one of the updates will be lost. To workaround this, we
-need a way for jobs to acquire a "lock" on the comment, so that they can safely get the current
+need a way for jobs to acquire a "lock" on the issue, so that they can safely get the current
 comment value, make edits, and push the updated value back to GitHub.
 
 What better locking mechanism than reactions! Turns out, the
-[create reaction](https://docs.github.com/en/rest/reactions/reactions?apiVersion=2022-11-28#create-reaction-for-an-issue-comment)
+[create reaction](https://docs.github.com/en/rest/reactions/reactions?apiVersion=2022-11-28#create-reaction-for-an-issue)
 API will return a `201 Created` status when a reaction is newly created and a `200 OK` when the
 reaction already exists. Using this subtle API detail, this action will attempt to acquire a lock by
 creating the reaction and waiting for a `201` status code. If it receives a `200` status code, it
