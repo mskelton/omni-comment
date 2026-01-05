@@ -40485,6 +40485,7 @@ async function main() {
   const collapsed = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getBooleanInput("collapsed")
   const section = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("section")
   const filePath = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("file-path")
+  const config = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("config")
 
   if (!message && filePath) {
     message = await (0,node_fs_promises__WEBPACK_IMPORTED_MODULE_2__.readFile)(filePath, "utf8")
@@ -40508,6 +40509,7 @@ async function main() {
     section,
     title,
     token: _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("token"),
+    configPath: config,
   })
 
   if (result) {
