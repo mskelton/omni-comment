@@ -39927,6 +39927,28 @@ async function createBlankComment(configPath) {
     ])
   ].filter(Boolean).join("\n\n");
 }
+function getSectionContent(body, section) {
+  const lines = body.split("\n");
+  const startIndex = lines.findIndex((line) => line.includes(createIdentifier("start", section)));
+  const endIndex = lines.findIndex((line) => line.includes(createIdentifier("end", section)));
+  if (startIndex === -1 || endIndex === -1 || startIndex >= endIndex) {
+    return null;
+  }
+  return lines.slice(startIndex + 1, endIndex).join("\n");
+}
+function formatSectionContent(content, title, collapsed) {
+  if (title) {
+    return [
+      `<details${collapsed ? "" : " open"}>`,
+      `<summary><h2>${title}</h2></summary>`,
+      "",
+      content,
+      "",
+      "</details>"
+    ].join("\n");
+  }
+  return content;
+}
 function editCommentBody({
   body,
   collapsed,
@@ -39937,16 +39959,7 @@ function editCommentBody({
   const lines = body.split("\n");
   const startIndex = lines.findIndex((line) => line.includes(createIdentifier("start", section)));
   const endIndex = lines.findIndex((line) => line.includes(createIdentifier("end", section)));
-  if (title) {
-    content = [
-      `<details${collapsed ? "" : " open"}>`,
-      `<summary><h2>${title}</h2></summary>`,
-      "",
-      content,
-      "",
-      "</details>"
-    ].join("\n");
-  }
+  content = formatSectionContent(content, title, collapsed);
   if (startIndex === -1 || endIndex === -1) {
     return [
       ...lines,
@@ -39984,6 +39997,19 @@ async function omniComment(options) {
       octokit: new dist_src_Octokit({ auth: options.token }),
       repo: parseRepo(options.repo)
     };
+    const existingComment = await findComment(options.issueNumber, ctx);
+    if (existingComment?.body) {
+      const currentContent = getSectionContent(existingComment.body, options.section);
+      const newContent = formatSectionContent(
+        options.message || "",
+        options.title,
+        options.collapsed ?? false
+      );
+      if (currentContent === newContent) {
+        ctx.logger?.debug("Section content unchanged, skipping update");
+        return { html_url: existingComment.html_url, id: existingComment.id, status: "unchanged" };
+      }
+    }
     const _ = __using(_stack, await acquireLock(options.issueNumber, ctx), true);
     const comment = await findComment(options.issueNumber, ctx);
     if (comment) {
