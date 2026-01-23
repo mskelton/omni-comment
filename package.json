@@ -2,20 +2,22 @@
   "name": "omni-comment",
   "version": "1.0.0",
   "description": "Combine outputs from many jobs into a single comment",
-  "main": "lib/main.js",
-  "scripts": {
-    "build": "ncc build"
-  },
   "keywords": [
-    "github",
     "actions",
-    "comment"
+    "comment",
+    "github"
   ],
-  "author": "Mark Skelton",
-  "license": "ISC",
   "homepage": "https://github.com/mskelton/omni-comment#readme",
   "bugs": {
     "url": "https://github.com/mskelton/omni-comment/issues"
+  },
+  "license": "ISC",
+  "author": "Mark Skelton",
+  "main": "lib/main.js",
+  "scripts": {
+    "build": "ncc build",
+    "format": "oxfmt --write",
+    "format:check": "oxfmt --check"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
@@ -25,6 +27,6 @@
   "devDependencies": {
     "@types/node": "^22.14.1",
     "@vercel/ncc": "^0.38.1",
-    "prettier": "^3.5.3"
+    "oxfmt": "^0.26.0"
   }
 }

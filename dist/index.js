@@ -32012,8 +32012,6 @@ var __webpack_exports__ = {};
 var core = __nccwpck_require__(7484);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(3228);
-;// CONCATENATED MODULE: external "node:fs/promises"
-const promises_namespaceObject = require("node:fs/promises");
 ;// CONCATENATED MODULE: ./node_modules/@octokit/rest/node_modules/universal-user-agent/index.js
 function getUserAgent() {
   if (typeof navigator === "object" && "userAgent" in navigator) {
@@ -39743,7 +39741,7 @@ var jsYaml = {
 
 
 ;// CONCATENATED MODULE: external "fs/promises"
-const external_fs_promises_namespaceObject = require("fs/promises");
+const promises_namespaceObject = require("fs/promises");
 ;// CONCATENATED MODULE: ./node_modules/@omni-comment/core/dist/index.js
 var __knownSymbol = (name, symbol) => (symbol = Symbol[name]) ? symbol : /* @__PURE__ */ Symbol.for("Symbol." + name);
 var __typeError = (msg) => {
@@ -39857,7 +39855,7 @@ function acquireLock(id, { logger, octokit, repo }) {
 
 
 async function readMetadata(configPath) {
-  const metadata = await external_fs_promises_namespaceObject.readFile(configPath, "utf8");
+  const metadata = await promises_namespaceObject.readFile(configPath, "utf8");
   return js_yaml.load(metadata);
 }
 
@@ -40044,6 +40042,8 @@ async function omniComment(options) {
 }
 
 
+;// CONCATENATED MODULE: external "node:fs/promises"
+const external_node_fs_promises_namespaceObject = require("node:fs/promises");
 ;// CONCATENATED MODULE: ./lib/main.js
 
 
@@ -40060,24 +40060,24 @@ function main_createLogger() {
 }
 
 async function main() {
-  let message = core.getInput("message")
-  const title = core.getInput("title")
-  const collapsed = core.getBooleanInput("collapsed")
-  const section = core.getInput("section")
-  const filePath = core.getInput("file-path")
-  const config = core.getInput("config")
+  let message = core.getInput('message')
+  const title = core.getInput('title')
+  const collapsed = core.getBooleanInput('collapsed')
+  const section = core.getInput('section')
+  const filePath = core.getInput('file-path')
+  const config = core.getInput('config')
 
   if (!message && filePath) {
-    message = await (0,promises_namespaceObject.readFile)(filePath, "utf8")
+    message = await (0,external_node_fs_promises_namespaceObject.readFile)(filePath, 'utf8')
   }
 
   const issueNumber =
-    parseInt(core.getInput("pr-number")) ||
+    parseInt(core.getInput('pr-number')) ||
     github.context.payload.pull_request?.number ||
     github.context.payload.issue?.number
 
   if (!issueNumber) {
-    throw new Error("No issue/pull request in input neither in current context.")
+    throw new Error('No issue/pull request in input neither in current context.')
   }
 
   const result = await omniComment({
@@ -40088,13 +40088,13 @@ async function main() {
     repo: `${github.context.repo.owner}/${github.context.repo.repo}`,
     section,
     title,
-    token: core.getInput("token"),
+    token: core.getInput('token'),
     configPath: config,
   })
 
   if (result) {
-    core.setOutput("id", result.id)
-    core.setOutput("html-url", result.html_url)
+    core.setOutput('id', result.id)
+    core.setOutput('html-url', result.html_url)
   }
 }
 
