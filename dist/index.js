@@ -39793,6 +39793,45 @@ var __callDispose = (stack, error, hasError) => {
 
 
 
+// node_modules/@octokit/request-error/dist-src/index.js
+var dist_RequestError = class extends Error {
+  name;
+  /**
+   * http status code
+   */
+  status;
+  /**
+   * Request options that lead to the error.
+   */
+  request;
+  /**
+   * Response object if a response was received
+   */
+  response;
+  constructor(message, statusCode, options) {
+    super(message, { cause: options.cause });
+    this.name = "HttpError";
+    this.status = Number.parseInt(statusCode);
+    if (Number.isNaN(this.status)) {
+      this.status = 0;
+    }
+    if ("response" in options) {
+      this.response = options.response;
+    }
+    const requestCopy = Object.assign({}, options.request);
+    if (options.request.headers.authorization) {
+      requestCopy.headers = Object.assign({}, options.request.headers, {
+        authorization: options.request.headers.authorization.replace(
+          /(?<! ) .*$/,
+          " [REDACTED]"
+        )
+      });
+    }
+    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
+    this.request = requestCopy;
+  }
+};
+
 // src/retry.ts
 async function retry(operation, maxAttempts = 3, delay = 1e3) {
   let attempt = 0;
@@ -39829,7 +39868,15 @@ function acquireLock(id, { logger, octokit, repo }) {
           ...repo,
           reaction_id: reaction.id
         };
-        await octokit.reactions.deleteForIssue({ ...args2, issue_number: id });
+        try {
+          await octokit.reactions.deleteForIssue({ ...args2, issue_number: id });
+        } catch (error) {
+          if (error instanceof dist_RequestError && error.status === 404) {
+            logger?.debug("Lock already released");
+          } else {
+            throw error;
+          }
+        }
       };
       if (status === 201) {
         logger?.debug("Lock acquired");
@@ -40041,6 +40088,11 @@ async function omniComment(options) {
   }
 }
 
+/*! Bundled license information:
+
+@octokit/request-error/dist-src/index.js:
+  (* v8 ignore else -- @preserve -- Bug with vitest coverage where it sees an else branch that doesn't exist *)
+*/
 
 ;// CONCATENATED MODULE: external "node:fs/promises"
 const external_node_fs_promises_namespaceObject = require("node:fs/promises");
