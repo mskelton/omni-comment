@@ -26,5 +26,5 @@ inputs:
     description: Path to the config file
     default: .github/omni-comment.yml
 runs:
-  using: node20
+  using: node24
   main: dist/index.js
