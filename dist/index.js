@@ -40018,6 +40018,11 @@ function editCommentBody({
 }
 
 // src/utils.ts
+var DEFAULT_GITHUB_API_URL = "https://api.github.com";
+function getGitHubApiUrl() {
+  const envUrl = process.env.GITHUB_API_URL?.trim();
+  return envUrl ?? DEFAULT_GITHUB_API_URL;
+}
 function parseRepo(repo) {
   const chunks = repo.replace(/\.git$/, "").split("/");
   if (chunks.length < 2) {
@@ -40039,7 +40044,10 @@ async function omniComment(options) {
     external_assert_(!!options.token, "Token is required");
     const ctx = {
       logger: options.logger,
-      octokit: new dist_src_Octokit({ auth: options.token }),
+      octokit: new dist_src_Octokit({
+        auth: options.token,
+        baseUrl: getGitHubApiUrl()
+      }),
       repo: parseRepo(options.repo)
     };
     const existingComment = await findComment(options.issueNumber, ctx);
